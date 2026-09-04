@@ -21,13 +21,6 @@ cd MCTS-guided-LLM-Negotiation
 pip install -r requirements.txt
 ```
 
-Python ≥ 3.10. There is nothing to build or install — run everything from the
-repository root with `python -m`, which puts the root on the import path.
-
-`requirements.txt` leaves vLLM and the training stack commented out: vLLM needs
-a CUDA toolchain and would fail to install on a laptop. Uncomment them on a GPU
-machine — vLLM is the backend every reported run used.
-
 ## Download the datasets
 
 Neither dataset is redistributed here; both are fetched from Hugging Face and
@@ -95,29 +88,14 @@ python -m experiments.a2a.run_negotiation_a2a_mcts \
 
 Results are written to `results/<domain>_<method>/<domain>_<method>_results_<timestamp>.json`.
 
-Run everything from the repository root — default data and checkpoint paths are
+Run everything from the repository root. Default data and checkpoint paths are
 relative to it.
 
-## The grid
-
-Two methods × two domains, one script each under `experiments/`:
-
-| Script suffix | Search | Opponent model | |
-|---|---|---|---|
-| `_mcts` | MCTS | analyzer | our method |
-| `_llm` | — | — | base case |
-
-```bash
-python -m experiments.cb.run_negotiation_cb_llm  --data-file CB/test.csv --end-index 300 --seed 42
-python -m experiments.a2a.run_negotiation_a2a_llm \
-    --data-file Agent2Agent-Negotiation-in-Consumer-Setting-Dataset/products.json \
-    --end-index 100 --seed 42
-```
 
 ## Training
 
 The actor (DPO) and analyzer (SFT) adapters are trained on data harvested from
-MCTS rollouts — collect, train, evaluate.
+MCTS rollouts.
 
 ```bash
 python -m negotiation_llm.data.collect_dpo --domain cb --data-file CB/train.csv --output-dir cb_dpo_train
@@ -143,12 +121,6 @@ negotiation_llm/
 experiments/{cb,a2a}/  one runner per method
 ```
 
-A domain contributes two objects: a **`NegotiationDomain`** (search side —
-strategies, prompts, parsing, reward; per-scenario and mutable) and a
-**`DomainSpec`** (evaluation side — scenario loading, the analyzer, the
-ground-truth seller prompt, final accounting; per-run and stateless). Implement
-both, then add one line to `DOMAIN_REGISTRY`.
-
 ## Data & licences
 
 Code is MIT ([LICENSE](LICENSE)). The datasets are not ours to relicense:
@@ -164,7 +136,6 @@ Code is MIT ([LICENSE](LICENSE)). The datasets are not ours to relicense:
   [arXiv:2506.00073](https://arxiv.org/abs/2506.00073) ·
   [code](https://github.com/ShenzheZhu/A2A-NT) ·
   [`Chouoftears/Agent2Agent-Negotiation-in-Consumer-Setting-Dataset`](https://huggingface.co/datasets/Chouoftears/Agent2Agent-Negotiation-in-Consumer-Setting-Dataset)
-  (no licence stated upstream)
 
 ## Citation
 
