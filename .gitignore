@@ -9,13 +9,13 @@ negotiations/
 negotiation_results/
 
 # --- model checkpoints ---
-# The adapter configs and tokenizer files are tracked; the weights are not.
-# adapter_model.safetensors is 514 MB each, five times GitHub's 100 MB
-# per-file limit, so they are distributed separately (see the README).
+# Adapters are distributed via the Hugging Face Hub, not this repo:
+#   https://huggingface.co/Jason-Huang/MCTS-guided-LLM-Negotiation
+# Fetch them with snapshot_download(local_dir="checkpoints") — see the README.
+checkpoints/
 *.safetensors
 *.pt
 *.bin
-training/checkpoints/
 
 # --- generated DPO / analyzer data ---
 *_dpo_train*/

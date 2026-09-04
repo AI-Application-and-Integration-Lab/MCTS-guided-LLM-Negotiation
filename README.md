@@ -63,10 +63,28 @@ snapshot_download(
 )
 ```
 
+## Get the adapters
+
+The two LoRA adapters live on the Hugging Face Hub:
+[**Jason-Huang/MCTS-guided-LLM-Negotiation**](https://huggingface.co/Jason-Huang/MCTS-guided-LLM-Negotiation).
+
+```python
+from huggingface_hub import snapshot_download
+
+snapshot_download(
+    "Jason-Huang/MCTS-guided-LLM-Negotiation",
+    local_dir="checkpoints",
+)
+```
+
+That writes `checkpoints/actor` and `checkpoints/analyzer` — the defaults for
+`--actor-adapter` and `--analyzer-adapter`, so a real run needs no extra flags.
+The runners fail loudly if either path is missing rather than silently falling
+back to the base model.
+
 ## Run
 
-With a GPU and the adapters in `checkpoints/` (both `--actor-adapter` and
-`--analyzer-adapter` default there, so a real run needs no extra flags):
+With a GPU and the adapters downloaded:
 
 ```bash
 # short smoke run on 2 scenarios — loads Qwen3-14B into vLLM, ~3 min of that
