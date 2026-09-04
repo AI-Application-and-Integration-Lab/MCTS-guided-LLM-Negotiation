@@ -1,0 +1,54 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "MCTS-guided LLM Negotiation: Strategy-level search with a learned opponent model"
+abstract: >-
+  Monte Carlo Tree Search over dialogue acts for LLM negotiation agents,
+  paired with a learned opponent model that infers the counterparty's
+  reservation price and persona from the transcript. Evaluated on
+  CraigslistBargain and an agent-to-agent consumer negotiation dataset.
+repository-code: "https://github.com/AI-Application-and-Integration-Lab/MCTS-guided-LLM-Negotiation"
+type: software
+license: MIT
+version: 0.1.0
+date-released: "2026-09-03"
+keywords:
+  - negotiation
+  - monte-carlo-tree-search
+  - large-language-models
+  - dialogue-systems
+# TODO: add authors and the paper reference before publishing.
+authors:
+  - name: "AI Application and Integration Lab"
+
+references:
+  - type: article
+    title: "The Automated but Risky Game: Modeling and Benchmarking Agent-to-Agent Negotiations and Transactions in Consumer Markets"
+    year: 2025
+    url: "https://arxiv.org/abs/2506.00073"
+    repository-code: "https://github.com/ShenzheZhu/A2A-NT"
+    authors:
+      - family-names: Zhu
+        given-names: Shenzhe
+      - family-names: Sun
+        given-names: Jiao
+      - family-names: Nian
+        given-names: Yi
+      - family-names: South
+        given-names: Tobin
+      - family-names: Pentland
+        given-names: Alex
+      - family-names: Pei
+        given-names: Jiaxin
+  - type: article
+    title: "Decoupling Strategy and Generation in Negotiation Dialogues"
+    year: 2018
+    url: "https://arxiv.org/abs/1808.09637"
+    authors:
+      - family-names: He
+        given-names: He
+      - family-names: Chen
+        given-names: Derek
+      - family-names: Balakrishnan
+        given-names: Anusha
+      - family-names: Liang
+        given-names: Percy

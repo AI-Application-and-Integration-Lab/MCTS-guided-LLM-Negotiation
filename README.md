@@ -1,0 +1,201 @@
+# MCTS-guided-LLM-Negotiation
+
+Strategy-level Monte Carlo Tree Search for LLM negotiation agents, with a
+learned opponent model.
+
+A buyer agent negotiates the price of an item against an LLM-simulated seller.
+Instead of sampling utterances directly, the agent runs MCTS over **dialogue
+acts** — propose a counter, use comparatives, ask a question — and an LLM
+realizes the selected act into the actual sentence and price. A second LoRA
+adapter, the **analyzer**, reads the transcript after every exchange and
+predicts the seller's reservation price, next move and persona; that estimate
+becomes the opponent model inside subsequent rollouts.
+
+---
+
+## Install
+
+```bash
+git clone https://github.com/AI-Application-and-Integration-Lab/MCTS-guided-LLM-Negotiation.git
+cd MCTS-guided-LLM-Negotiation
+pip install -r requirements.txt
+```
+
+Python ≥ 3.10. There is nothing to build or install — run everything from the
+repository root with `python -m`, which puts the root on the import path.
+
+`requirements.txt` leaves vLLM and the training stack commented out: vLLM needs
+a CUDA toolchain and would fail to install on a laptop. Uncomment them on a GPU
+machine — vLLM is the backend every reported run used.
+
+## Download the datasets
+
+Neither dataset is redistributed here; both are fetched from Hugging Face and
+keep their own licences.
+
+**CraigslistBargain** — He et al. 2018. Read the Hub's auto-converted parquet
+export rather than `load_dataset`: CB is a script-based dataset, so
+`datasets>=2.16` requires `trust_remote_code=True` and `datasets>=3.0` removed
+script datasets entirely. The parquet export is version-independent.
+
+```python
+import pandas as pd
+from huggingface_hub import hf_hub_download
+
+for split in ("train", "test", "validation"):
+    path = hf_hub_download(
+        "stanfordnlp/craigslist_bargains",
+        f"default/craigslist_bargains-{split}.parquet",
+        repo_type="dataset", revision="refs/convert/parquet",
+    )
+    pd.read_parquet(path).to_csv(f"CB/{split}.csv", index=False)
+```
+
+The CSV form matters: the loader reverse-engineers the numpy
+`array([...], dtype=object)` reprs that `to_csv` produces for the struct
+columns. Parquet read straight from disk will not parse.
+
+**A2A-NT** — the agent-to-agent negotiation product catalogue from Zhu et al.
+2025 ([paper](https://arxiv.org/abs/2506.00073) ·
+[code](https://github.com/ShenzheZhu/A2A-NT)). Use `snapshot_download`, never
+`git clone`: a cloned HF dataset carries a nested `.git/`, which GitHub renders
+as an empty phantom submodule.
+
+```python
+from huggingface_hub import snapshot_download
+snapshot_download(
+    "Chouoftears/Agent2Agent-Negotiation-in-Consumer-Setting-Dataset",
+    repo_type="dataset", allow_patterns=["*.json"],
+    local_dir="Agent2Agent-Negotiation-in-Consumer-Setting-Dataset",
+)
+```
+
+## Run
+
+With a GPU and the adapters in `checkpoints/` (both `--actor-adapter` and
+`--analyzer-adapter` default there, so a real run needs no extra flags):
+
+```bash
+# short smoke run on 2 scenarios — loads Qwen3-14B into vLLM, ~3 min of that
+# is model load
+python -m experiments.cb.run_negotiation_cb_mcts \
+    --data-file CB/test.csv --end-index 2 --num-simulations 3 --verbose
+```
+
+Full runs:
+
+```bash
+python -m experiments.cb.run_negotiation_cb_mcts \
+    --data-file CB/test.csv --end-index 300 --seed 42
+
+python -m experiments.a2a.run_negotiation_a2a_mcts \
+    --data-file Agent2Agent-Negotiation-in-Consumer-Setting-Dataset/products.json \
+    --end-index 100 --seed 42 --buyer-target-ratio 0.2
+```
+
+Results are written to `results/<domain>_<method>/<domain>_<method>_results_<timestamp>.json`.
+
+Run everything from the repository root — default data and checkpoint paths are
+relative to it.
+
+## The grid
+
+Two methods × two domains, one script each under `experiments/`:
+
+| Script suffix | Search | Opponent model | |
+|---|---|---|---|
+| `_mcts` | MCTS | analyzer | our method |
+| `_llm` | — | — | base case |
+
+```bash
+python -m experiments.cb.run_negotiation_cb_llm  --data-file CB/test.csv --end-index 300 --seed 42
+python -m experiments.a2a.run_negotiation_a2a_llm \
+    --data-file Agent2Agent-Negotiation-in-Consumer-Setting-Dataset/products.json \
+    --end-index 100 --seed 42
+```
+
+## Training
+
+The actor (DPO) and analyzer (SFT) adapters are trained on data harvested from
+MCTS rollouts — collect, train, evaluate.
+
+```bash
+python -m negotiation_llm.data.collect_dpo --domain cb --data-file CB/train.csv --output-dir cb_dpo_train
+python -m negotiation_llm.training.actor_training    --data-dir cb_dpo_train --domain cb
+python -m negotiation_llm.training.analyzer_training --data-dir cb_dpo_train/analyzer --domain cb
+```
+
+Collection works for either domain.
+
+## Layout
+
+```
+negotiation_llm/
+├── config.py          MODEL_CONFIG, MCTS_CONFIG, NEGOTIATION_CONFIG
+├── models.py          BaseModel + HuggingFace / vLLM / OpenAI / Mock backends
+├── mcts/              search core — domain-agnostic
+│   ├── domain.py      NegotiationDomain ABC (the search contract)
+│   ├── node.py        PUCT node
+│   └── negotiator.py  MCTSNegotiator
+├── domains/           cb, a2a — each a NegotiationDomain + a DomainSpec
+├── training/          actor (DPO) and analyzer (SFT)
+└── data/              DPO collection from rollouts
+experiments/{cb,a2a}/  one runner per method
+```
+
+A domain contributes two objects: a **`NegotiationDomain`** (search side —
+strategies, prompts, parsing, reward; per-scenario and mutable) and a
+**`DomainSpec`** (evaluation side — scenario loading, the analyzer, the
+ground-truth seller prompt, final accounting; per-run and stateless). Implement
+both, then add one line to `DOMAIN_REGISTRY`.
+
+## Data & licences
+
+Code is MIT ([LICENSE](LICENSE)). The datasets are not ours to relicense:
+
+- **CraigslistBargain** — He, Chen, Balakrishnan & Liang, *Decoupling Strategy
+  and Generation in Negotiation Dialogues*, EMNLP 2018.
+  [arXiv:1808.09637](https://arxiv.org/abs/1808.09637) ·
+  [project](https://stanfordnlp.github.io/cocoa/) ·
+  [`stanfordnlp/craigslist_bargains`](https://huggingface.co/datasets/stanfordnlp/craigslist_bargains)
+- **A2A-NT** — Zhu, Sun, Nian, South, Pentland & Pei, *The Automated but Risky
+  Game: Modeling and Benchmarking Agent-to-Agent Negotiations and Transactions
+  in Consumer Markets*, 2025.
+  [arXiv:2506.00073](https://arxiv.org/abs/2506.00073) ·
+  [code](https://github.com/ShenzheZhu/A2A-NT) ·
+  [`Chouoftears/Agent2Agent-Negotiation-in-Consumer-Setting-Dataset`](https://huggingface.co/datasets/Chouoftears/Agent2Agent-Negotiation-in-Consumer-Setting-Dataset)
+  (no licence stated upstream)
+
+## Citation
+
+```bibtex
+@software{mcts_guided_llm_negotiation,
+  title  = {MCTS-guided LLM Negotiation: Strategy-level search with a learned opponent model},
+  year   = {2026},
+  url    = {https://github.com/AI-Application-and-Integration-Lab/MCTS-guided-LLM-Negotiation}
+}
+```
+
+If you use the evaluation datasets, cite them too:
+
+```bibtex
+@misc{zhu2025automatedriskygamemodeling,
+      title={The Automated but Risky Game: Modeling and Benchmarking Agent-to-Agent Negotiations and Transactions in Consumer Markets},
+      author={Shenzhe Zhu and Jiao Sun and Yi Nian and Tobin South and Alex Pentland and Jiaxin Pei},
+      year={2025},
+      eprint={2506.00073},
+      archivePrefix={arXiv},
+      primaryClass={cs.AI},
+      url={https://arxiv.org/abs/2506.00073},
+}
+
+@misc{he2018decoupling,
+      title={Decoupling Strategy and Generation in Negotiation Dialogues},
+      author={He He and Derek Chen and Anusha Balakrishnan and Percy Liang},
+      year={2018},
+      eprint={1808.09637},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/1808.09637},
+}
+```
