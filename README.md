@@ -1,5 +1,6 @@
 # MCTS-guided-LLM-Negotiation
 
+This repository contains the implementation of Online Strategic Reasoning for LLM-Based Negotiation via Opponent-Aware Monte Carlo Tree Search
 Strategy-level Monte Carlo Tree Search for LLM negotiation agents, with a
 learned opponent model.
 
