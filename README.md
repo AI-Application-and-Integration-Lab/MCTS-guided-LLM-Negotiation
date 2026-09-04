@@ -3,7 +3,7 @@
 Strategy-level Monte Carlo Tree Search for LLM negotiation agents, with a
 learned opponent model.
 
-A buyer agent negotiates the price of an item against an LLM-simulated seller.
+A buyer agent negotiates the price of an item against an LLM-simulated seller. 
 Instead of sampling utterances directly, the agent runs MCTS over **dialogue
 acts** — propose a counter, use comparatives, ask a question — and an LLM
 realizes the selected act into the actual sentence and price. A second LoRA
@@ -22,14 +22,9 @@ pip install -r requirements.txt
 ```
 
 ## Download the datasets
+.
 
-Neither dataset is redistributed here; both are fetched from Hugging Face and
-keep their own licences.
-
-**CraigslistBargain** — He et al. 2018. Read the Hub's auto-converted parquet
-export rather than `load_dataset`: CB is a script-based dataset, so
-`datasets>=2.16` requires `trust_remote_code=True` and `datasets>=3.0` removed
-script datasets entirely. The parquet export is version-independent.
+**CraigslistBargain** — He et al. 2018. 
 
 ```python
 import pandas as pd
@@ -44,15 +39,9 @@ for split in ("train", "test", "validation"):
     pd.read_parquet(path).to_csv(f"CB/{split}.csv", index=False)
 ```
 
-The CSV form matters: the loader reverse-engineers the numpy
-`array([...], dtype=object)` reprs that `to_csv` produces for the struct
-columns. Parquet read straight from disk will not parse.
-
 **A2A-NT** — the agent-to-agent negotiation product catalogue from Zhu et al.
 2025 ([paper](https://arxiv.org/abs/2506.00073) ·
-[code](https://github.com/ShenzheZhu/A2A-NT)). Use `snapshot_download`, never
-`git clone`: a cloned HF dataset carries a nested `.git/`, which GitHub renders
-as an empty phantom submodule.
+[code](https://github.com/ShenzheZhu/A2A-NT)). 
 
 ```python
 from huggingface_hub import snapshot_download
@@ -65,12 +54,10 @@ snapshot_download(
 
 ## Run
 
-With a GPU and the adapters in `checkpoints/` (both `--actor-adapter` and
-`--analyzer-adapter` default there, so a real run needs no extra flags):
+With a GPU and the adapters in `checkpoints/` :
 
 ```bash
-# short smoke run on 2 scenarios — loads Qwen3-14B into vLLM, ~3 min of that
-# is model load
+# short smoke run on 2 scenarios
 python -m experiments.cb.run_negotiation_cb_mcts \
     --data-file CB/test.csv --end-index 2 --num-simulations 3 --verbose
 ```
@@ -88,14 +75,12 @@ python -m experiments.a2a.run_negotiation_a2a_mcts \
 
 Results are written to `results/<domain>_<method>/<domain>_<method>_results_<timestamp>.json`.
 
-Run everything from the repository root. Default data and checkpoint paths are
-relative to it.
+Run everything from the repository root. Default data and checkpoint paths are relative to it.
 
 
 ## Training
 
-The actor (DPO) and analyzer (SFT) adapters are trained on data harvested from
-MCTS rollouts.
+The actor (DPO) and analyzer (SFT) adapters are trained on data generated based on MCTS rollouts.
 
 ```bash
 python -m negotiation_llm.data.collect_dpo --domain cb --data-file CB/train.csv --output-dir cb_dpo_train
