@@ -64,11 +64,6 @@ snapshot_download(
 )
 ```
 
-That writes `checkpoints/actor` and `checkpoints/analyzer` — the defaults for
-`--actor-adapter` and `--analyzer-adapter`, so a real run needs no extra flags.
-The runners fail loudly if either path is missing rather than silently falling
-back to the base model.
-
 ## Run
 
 With a GPU and the adapters downloaded to `checkpoints/`:
