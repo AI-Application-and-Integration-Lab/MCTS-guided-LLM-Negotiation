@@ -1,8 +1,6 @@
 # MCTS-guided-LLM-Negotiation
 
-This repository contains the implementation of Online Strategic Reasoning for LLM-Based Negotiation via Opponent-Aware Monte Carlo Tree Search
-Strategy-level Monte Carlo Tree Search for LLM negotiation agents, with a
-learned opponent model.
+This repository contains the implementation of Online Strategic Reasoning for LLM-Based Negotiation via Opponent-Aware Monte Carlo Tree Search.
 
 A buyer agent negotiates the price of an item against an LLM-simulated seller. 
 Instead of sampling utterances directly, the agent runs MCTS over **dialogue
@@ -146,13 +144,23 @@ If you use the evaluation datasets, cite them too:
       url={https://arxiv.org/abs/2506.00073},
 }
 
-@misc{he2018decoupling,
-      title={Decoupling Strategy and Generation in Negotiation Dialogues},
-      author={He He and Derek Chen and Anusha Balakrishnan and Percy Liang},
-      year={2018},
-      eprint={1808.09637},
-      archivePrefix={arXiv},
-      primaryClass={cs.CL},
-      url={https://arxiv.org/abs/1808.09637},
+@inproceedings{he-etal-2018-decoupling,
+    title = "Decoupling Strategy and Generation in Negotiation Dialogues",
+    author = "He, He  and
+      Chen, Derek  and
+      Balakrishnan, Anusha  and
+      Liang, Percy",
+    editor = "Riloff, Ellen  and
+      Chiang, David  and
+      Hockenmaier, Julia  and
+      Tsujii, Jun{'}ichi",
+    booktitle = "Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing",
+    month = oct # "-" # nov,
+    year = "2018",
+    address = "Brussels, Belgium",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/D18-1256/",
+    doi = "10.18653/v1/D18-1256",
+    pages = "2333--2343",
 }
 ```
